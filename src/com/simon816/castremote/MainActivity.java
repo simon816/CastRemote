@@ -12,15 +12,23 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import de.w3is.jdial.Discovery;
+import de.w3is.jdial.model.DialServer;
+import de.w3is.jdial.protocol.MSearch;
+import de.w3is.jdial.protocol.ProtocolFactoryImpl;
 import su.litvak.chromecast.api.v2.ChromeCast;
 import su.litvak.chromecast.api.v2.ChromeCasts;
 import su.litvak.chromecast.api.v2.ChromeCastsListener;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
 
 public class MainActivity extends Activity {
 
@@ -112,6 +120,17 @@ public class MainActivity extends Activity {
                 openChromecast(ChromeCasts.get().get(position));
             }
         });
+        ListView dialListView = (ListView) findViewById(R.id.dial_list);
+        dialListView.setAdapter(new ArrayAdapter<>(context, R.layout.list_view_text));
+        dialListView.setOnItemClickListener(new OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                discovery.setScanning(false);
+                DialServer device = (DialServer) parent.getItemAtPosition(position);
+                openDialDevice(device);
+            }
+        });
         Button openTest = (Button) findViewById(R.id.open_test);
         openTest.setOnClickListener(new OnClickListener() {
 
@@ -123,6 +142,12 @@ public class MainActivity extends Activity {
                 openChromecast(chromeCast);
             }
         });
+    }
+
+    void openDialDevice(DialServer device) {
+        Intent intent = new Intent(this, DialActivity.class);
+        intent.putExtra("device", device);
+        this.startActivity(intent);
     }
 
     void openChromecast(ChromeCast chromeCast) {
@@ -160,6 +185,7 @@ public class MainActivity extends Activity {
     public class CastDiscovery {
 
         boolean isScanning = false;
+        Thread dialThread;
 
         public void stop() {
             new AsyncTask<Object, Object, Object>() {
@@ -168,6 +194,10 @@ public class MainActivity extends Activity {
                 protected Object doInBackground(Object... params) {
                     try {
                         ChromeCasts.stopDiscovery();
+                        if (dialThread != null) {
+                            dialThread.interrupt();
+                            dialThread = null;
+                        }
                         isScanning = false;
                     } catch (IOException e) {
                         // TODO Auto-generated catch block
@@ -206,6 +236,38 @@ public class MainActivity extends Activity {
                 protected Object doInBackground(Object... params) {
                     try {
                         ChromeCasts.startDiscovery();
+                        if (dialThread != null) {
+                            dialThread.interrupt();
+                        }
+                        dialThread = new Thread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                ProtocolFactoryImpl factory = new ProtocolFactoryImpl(false) {
+
+                                    @Override
+                                    public MSearch createMSearch() {
+                                        return new MSearchImpl(getMSearchResponseDelay(), getSocketTimeoutMs());
+                                    }
+                                };
+                                factory.setMSearchResponseDelay(3);
+                                final List<DialServer> dialServers = new Discovery(factory).discover();
+                                runOnUiThread(new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        ListView listView = (ListView) findViewById(R.id.dial_list);
+                                        @SuppressWarnings("unchecked")
+                                        ArrayAdapter<String> listAdapter = (ArrayAdapter<String>) listView.getAdapter();
+                                        listAdapter.clear();
+                                        for (DialServer dialServer : dialServers) {
+                                            listAdapter.add(dialServer.getFriendlyName());
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                        dialThread.start();
                         isScanning = true;
                     } catch (IOException e) {
                         // TODO Auto-generated catch block

@@ -218,6 +218,7 @@ public class YouTubeFragment extends Fragment {
         final String deviceName = "Simon";
         final String deviceId = ((CastRemoteApp) getActivity().getApplication()).deviceId;
         // bind chromecast from activity to this fragment
+        // TODO handle non-chromecast case
         chromeCast = ((CastActivity) getActivity()).getChromeCast();
         chromeCast.registerListener(new ChromeCastSpontaneousEventListener() {
 
