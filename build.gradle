@@ -22,7 +22,7 @@ configurations {
 dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-annotations:[2.10.1,2.10.99]'
     implementation 'com.fasterxml.jackson.core:jackson-databind:[2.10.1,2.10.99]'
-    implementation 'su.litvak.chromecast:api-v2:0.11.3'
+    implementation project(':chromecast-java-api-v2')
     implementation 'de.w3is:jdial:1.3'
 }
 

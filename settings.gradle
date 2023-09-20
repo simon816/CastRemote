@@ -1,1 +1,2 @@
+include ':chromecast-java-api-v2'
 rootProject.name = 'CastRemote'

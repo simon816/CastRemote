@@ -1,0 +1,4 @@
+[submodule "chromecast-java-api-v2"]
+	path = chromecast-java-api-v2
+	url = https://github.com/simon816/chromecast-java-api-v2.git
+	branch = fork
