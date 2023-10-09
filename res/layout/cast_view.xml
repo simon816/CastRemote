@@ -10,7 +10,6 @@
     tools:context="com.simon816.castremote.CastActivity" >
 
     <LinearLayout
-        android:id="@+id/volume_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content" >
 
@@ -28,6 +27,38 @@
             android:max="@integer/max_volume" />
     </LinearLayout>
 
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <Button
+            android:id="@+id/cast_pause_play"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:minWidth="48dip"
+            android:text="⏵" />
+
+        <Button
+            android:id="@+id/cast_previous"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/cast_pause_play"
+            android:layout_toLeftOf="@+id/cast_pause_play"
+            android:text="⏮" />
+
+        <Button
+            android:id="@+id/cast_next"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/cast_pause_play"
+            android:layout_toRightOf="@+id/cast_pause_play"
+            android:text="⏭" />
+    </RelativeLayout>
+    
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >

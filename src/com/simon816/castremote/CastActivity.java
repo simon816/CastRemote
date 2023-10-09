@@ -1,6 +1,7 @@
 package com.simon816.castremote;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -9,12 +10,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import com.simon816.castremote.youtube.YouTubeFragment;
 import su.litvak.chromecast.api.v2.ChromeCast;
 import su.litvak.chromecast.api.v2.MediaStatus;
+import su.litvak.chromecast.api.v2.MediaStatus.PlayerState;
 import su.litvak.chromecast.api.v2.Status;
 
 import java.io.IOException;
@@ -26,11 +29,17 @@ import java.util.Map;
 public class CastActivity extends Activity {
 
     public static final Map<String, String> APPS = new HashMap<>();
+    public static final Map<String, Class<? extends Fragment>> APP_TO_FRAGMENT = new HashMap<>();
     {
         APPS.put("YouTube", "233637DE");
+        APPS.put("Soundcloud", "B143C57E");
+
+        APP_TO_FRAGMENT.put(APPS.get("YouTube"), YouTubeFragment.class);
+        APP_TO_FRAGMENT.put(APPS.get("Soundcloud"), SoundcloudFragment.class);
     }
 
     public static final String APP_YOUTUBE = "233637DE";
+    public static final String APP_SOUNDCLOUD_PLAYER = "B143C57E";
 
     ChromeCast chromeCast;
     boolean ready = false;
@@ -142,6 +151,7 @@ public class CastActivity extends Activity {
                 }.execute();
             }
         });
+
         SeekBar volBar = (SeekBar) findViewById(R.id.volume_bar);
         int volume = (int) (status.volume.level * volBar.getMax());
         volBar.setProgress(volume);
@@ -149,9 +159,89 @@ public class CastActivity extends Activity {
         muteBox.setChecked(status.volume.muted);
         System.out.println("Got status " + status);
         System.out.println("got media status " + mediaStatus);
-        findViewById(R.id.volume_layout).setVisibility(View.VISIBLE);
-        if (APP_YOUTUBE.equals(status.getRunningApp().id)) {
-            getFragmentManager().beginTransaction().add(R.id.controller_container, new YouTubeFragment(), "YouTube").commit();
+
+        Button prevButton = (Button) findViewById(R.id.cast_previous);
+        prevButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                new Thread() {
+
+                    public void run() {
+                        try {
+                            chromeCast.queueUpdate(-1);
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    };
+                }.start();
+            }
+        });
+        final Button playButton = (Button) findViewById(R.id.cast_pause_play);
+        playButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                new AsyncTask<Object, Object, Boolean>() {
+
+                    @Override
+                    protected Boolean doInBackground(Object... params) {
+
+                        try {
+                            PlayerState state = chromeCast.getMediaStatus().playerState;
+                            if (state != PlayerState.PLAYING) {
+                                chromeCast.play();
+                                return true;
+                            } else {
+                                chromeCast.pause();
+                                return false;
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        return null;
+                    }
+
+                    protected void onPostExecute(Boolean isPlaying) {
+                        if (isPlaying == null)
+                            return;
+                        if (isPlaying) {
+                            playButton.setText("⏸");
+                        } else {
+                            playButton.setText("⏵");
+                        }
+                    }
+                }.execute();
+            }
+        });
+        Button nextButton = (Button) findViewById(R.id.cast_next);
+        nextButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                new Thread() {
+
+                    public void run() {
+                        try {
+                            chromeCast.queueUpdate(1);
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    };
+                }.start();
+            }
+        });
+
+        Class<? extends Fragment> appFrag = APP_TO_FRAGMENT.get(status.getRunningApp().id);
+        if (appFrag != null) {
+            try {
+                getFragmentManager().beginTransaction().add(R.id.controller_container, appFrag.newInstance()).commit();
+            } catch (InstantiationException | IllegalAccessException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
         ready = true;
     }

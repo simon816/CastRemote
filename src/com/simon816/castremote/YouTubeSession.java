@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -28,8 +27,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 // based on https://github.com/ur1katz/casttube/blob/master/casttube/YouTubeSession.py
 // Some functions from https://github.com/henriquekano/youtube-lounge-api/wiki/Annex#remote-commands
@@ -402,7 +399,7 @@ public class YouTubeSession {
         Map<String, String> postParams = new HashMap<>();
         postParams.put("TYPE", "terminate");
         postParams.put("clientDisconnectReason", "MDX_SESSION_DISCONNECT_REASON_DISCONNECTED_BY_USER");
-        byte[] data = urlEncodeParams(postParams).getBytes(Charset.forName("UTF-8"));
+        byte[] data = Utils.urlEncodeParams(postParams).getBytes(Charset.forName("UTF-8"));
         doPost(BIND_URL, data, params, OutputParser.TEXT);
         this.disconnect();
     }
@@ -446,7 +443,7 @@ public class YouTubeSession {
         params.put("screen_name", this.state.screenDevice.name);
         params.put("device_id", this.state.screenDevice.id);
 
-        byte[] data = urlEncodeParams(params).getBytes(Charset.forName("UTF-8"));
+        byte[] data = Utils.urlEncodeParams(params).getBytes(Charset.forName("UTF-8"));
 
         HttpURLConnection connection = (HttpURLConnection) CREATE_PAIR_URL.openConnection();
         connection.addRequestProperty("Origin", "https://www.youtube.com/");
@@ -596,7 +593,7 @@ public class YouTubeSession {
                     params.put("req" + i + "_" + entry.getKey(), entry.getValue());
                 }
         }
-        return urlEncodeParams(params);
+        return Utils.urlEncodeParams(params);
     }
 
     private void connect() throws IOException {
@@ -618,7 +615,7 @@ public class YouTubeSession {
         postData.put("mdx-version", "3");
         postData.put("pairing_type", "cast");
         postData.put("app", "android-phone-13.14.55");
-        byte[] data = urlEncodeParams(postData).getBytes(Charset.forName("UTF-8"));
+        byte[] data = Utils.urlEncodeParams(postData).getBytes(Charset.forName("UTF-8"));
         List<YTEvent> events = doPost(BIND_URL, data, params, OutputParser.EVENT_STREAM);
         this.connected = true;
         updateFromEvents(events);
@@ -726,23 +723,9 @@ public class YouTubeSession {
         return doPost(url, data, null, outParser);
     }
 
-    private String urlEncodeParams(Map<String, String> params) {
-        return params.entrySet().stream().map(new Function<Map.Entry<String, String>, String>() {
-
-            @Override
-            public String apply(Entry<String, String> e) {
-                try {
-                    return URLEncoder.encode(e.getKey(), "UTF-8") + "=" + URLEncoder.encode(e.getValue(), "UTF-8");
-                } catch (UnsupportedEncodingException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        }).collect(Collectors.joining("&"));
-    }
-
     private URL withParams(URL url, Map<String, String> params) throws MalformedURLException {
         if (params != null) {
-            url = new URL(url.toExternalForm() + "?" + urlEncodeParams(params));
+            url = new URL(url.toExternalForm() + "?" + Utils.urlEncodeParams(params));
         }
         return url;
     }

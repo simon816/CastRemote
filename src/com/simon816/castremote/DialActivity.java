@@ -61,6 +61,9 @@ public class DialActivity extends Activity {
                     System.out.println(result);
                     try {
                         // TODO: connect screenId to YouTubeFragment
+                        // n.b. I can't test this with a chromecast, but there's some evidence how it works here:
+                        // https://github.com/MarcoLucidi01/ytcast/blob/72c271afa89a7b9a081a878d91b055053306095b/youtube/util.go#L39
+                        // https://github.com/thedroidgeek/youtube-cast-automation-api/blob/74c163232621fb34eae31729d86868a92447e010/deps/utils.py#L127
                         String screenId = XPathFactory.newInstance().newXPath().evaluate("/screenId/text()", result.getAdditionalData());
                         getFragmentManager().beginTransaction().add(R.id.controller_container, new YouTubeFragment(), "YouTube").commit();
                     } catch (XPathExpressionException e) {
